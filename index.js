@@ -8,7 +8,13 @@ app.use(cors());
 const PORT = process.env.PORT || 3001; //short circuit 
 app.use(express.json());
 const { Client } = require("pg");
-const client = new Client(process.env.DATABASE_URL);
+// const client = new Client(process.env.DATABASE_URL);
+const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+})
 
 //routs 
 app.get('/', handleHome);
@@ -46,30 +52,30 @@ function handleGetAnime(req, res) {
 async function handleAsyncAwait(req, res) {
 
     try {
-        
+
         const url = `https://api.jikan.moe/v4/characters/6`;
         console.log("before await");
         let result = await axios.get(url);
         console.log("after await");
 
         // console.log(result.data.data);
-         let animeObj = result.data.data;
-         let anime = new Anime(animeObj);
-         res.json(anime);
+        let animeObj = result.data.data;
+        let anime = new Anime(animeObj);
+        res.json(anime);
         // res.send("ok");
     } catch (error) {
         console.log(error);
     }
-    }
+}
 
-function handleParams(req, res) { 
+function handleParams(req, res) {
     console.log(req.params.id);
     console.log(req.params.name);
     res.send("done");
 }
 
-function handleAddAnime(req, res) { 
-    let name = req.body.name; 
+function handleAddAnime(req, res) {
+    let name = req.body.name;
     let url = req.body.url;
     // let {name,url}= req.body
     let sql = `INSERT INTO favanime (name,url) VALUES($1,$2) RETURNING *`;
@@ -80,7 +86,7 @@ function handleAddAnime(req, res) {
     }).catch()
 
 }
-function handleGetFavAnime(req, res) { 
+function handleGetFavAnime(req, res) {
     let sql = `SELECT * FROM favanime  `;
     client.query(sql).then(result => {
         console.log(result.rows);
@@ -121,13 +127,13 @@ function handleDeleteAnime(req, res) {
 //constructor function
 function Anime(animeData) {
     this.name = animeData.name;
-    this.url=animeData.url;
+    this.url = animeData.url;
 }
 
 
 
 client.connect().then(() => {
-    
+
     app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
     })
